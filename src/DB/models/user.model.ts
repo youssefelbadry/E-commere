@@ -71,7 +71,7 @@ export class User {
     type: String,
     trim: true,
   })
-  avatar?: string;
+  profileImage?: string;
 
   @Prop({
     type: String,
