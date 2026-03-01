@@ -9,7 +9,7 @@ import { UpdateCategoryDto } from "./dto/update-category.dto";
 import { InjectModel } from "@nestjs/mongoose";
 import { Category, HCategoryDoc } from "src/DB/models/category.model";
 import { Model, Types } from "mongoose";
-import { FindOneBrandDto } from "src/brands/dto/create-brand.dto";
+import { FindOneBrandDto } from "src/modules/brands/dto/create-brand.dto";
 
 @Injectable()
 export class CategoryService {
