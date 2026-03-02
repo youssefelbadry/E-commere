@@ -8,7 +8,7 @@ export class Coupon implements ICoupon {
     type: String,
     unique: true,
     minlength: 3,
-    maxlength: 20,
+    maxlength: 40,
  })
   code?: string;
 

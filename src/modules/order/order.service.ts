@@ -1,26 +1,133 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
-
+import { Cart } from 'src/DB/models/cart.model';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
+import { IOrderItem, orderStatus } from 'lib/IOrder/create-order.interface';
+import { Order } from 'src/DB/models/order.model';
+import { Product } from 'src/DB/models/product.model';
+import { Coupon } from 'src/DB/models/coupon.model';
+import { BadRequestException } from '@nestjs/common';
 @Injectable()
 export class OrderService {
-  create(createOrderDto: CreateOrderDto) {
-    return 'This action adds a new order';
+  constructor(@InjectModel(Cart.name) private readonly _cartModel: Model<Cart>,
+  @InjectModel(Order.name) private readonly _orderModel: Model<Order>,
+  @InjectModel(Product.name) private readonly _productModel: Model<Product>,
+  @InjectModel(Coupon.name) private readonly _couponModel: Model<Coupon>,
+  ) {}
+
+//User
+async create(createOrderDto: CreateOrderDto, req: any) {
+
+  const cart = await this._cartModel.findOne({
+    user: req.user._id,
+  });
+
+  if (!cart || !cart.items.length) {
+    throw new NotFoundException("Cart not found or empty");
   }
 
-  findAll() {
-    return `This action returns all order`;
+  for (const item of cart.items) {
+    const product = await this._productModel.findById(item.product);
+
+    if (!product || product.quantity < item.quantity) {
+      throw new BadRequestException("Product not available");
+    }
+
+    product.quantity -= item.quantity;
+    product.sold += item.quantity;
+    await product.save();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} order`;
+  const order = await this._orderModel.create({
+    ...createOrderDto,
+    user: new Types.ObjectId(req.user._id),
+    cartId: cart._id,
+    items: cart.items,
+    orderStatus: orderStatus.PENDING,
+    subTotalPrice: cart.subTotalPrice,
+    tax: cart.tax,
+    shipping: cart.shipping,
+    discount: cart.discount,
+    totalPrice: cart.totalPrice,
+    couponCode:cart.couponCode ? true : false,
+  });
+
+  if (cart.couponCode) {
+    const coupon = await this._couponModel.findOne({
+      code: cart.couponCode,
+    });
+
+    if (coupon) {
+      coupon.usageCount += 1;
+
+      if (
+        coupon.maxUsage > 0 &&
+        coupon.usageCount >= coupon.maxUsage
+      ) {
+        coupon.isActive = false;
+      }
+
+      await coupon.save();
+    }
   }
 
-  update(id: number, updateOrderDto: UpdateOrderDto) {
-    return `This action updates a #${id} order`;
+  await cart.deleteOne();
+
+  return {
+    message: "Order created successfully",
+    data :{order},
+  };
+}
+//User
+async findOrders(req: any) {
+    const orders = await this._orderModel.find({user: req.user._id});
+    if(!orders) throw new NotFoundException("Orders not found");
+    
+    return {message: "Orders found successfully", data: {orders}};
+  }
+//User
+ async findOrder(req: any, id: string) {
+    const order = await this._orderModel.findById(id , {user: req.user._id});
+    if(!order) throw new NotFoundException("Order not found");
+    
+    return {message: "Order found successfully", data: {order}};
+  }
+//User
+ async cancelOrder(req : any, id: string) {
+   const checkOrder = await this._orderModel.findById(id , {user: req.user._id})
+if(!checkOrder) throw new NotFoundException("Order not founded")
+
+if(checkOrder.orderStatus !== orderStatus.PENDING){
+    if(checkOrder.orderStatus === orderStatus.DELIVERED){
+        throw new BadRequestException("Order is already delivered");
+    }else if(checkOrder.orderStatus === orderStatus.SHIPPED){
+        throw new BadRequestException("Order is already shipped");
+    }else if(checkOrder.orderStatus === orderStatus.CANCELLED){
+        throw new BadRequestException("Order is already cancelled");
+    }
+}
+
+checkOrder.orderStatus = orderStatus.CANCELLED;
+await checkOrder.save();
+
+return {message: "Order cancelled successfully", data: {checkOrder}};
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} order`;
+  //ADMINS
+ async updateOrder(id: string, updateOrderDto: UpdateOrderDto) {
+const checkCart = await this._cartModel.findOne({user :new Types.ObjectId(id)})
+if(!checkCart) throw new NotFoundException("Cart not found");
+
+const checkOrder = await this._orderModel.findOne({user :new Types.ObjectId(id)})
+if(!checkOrder) throw new NotFoundException("Order not found");
+
+checkOrder.orderStatus = updateOrderDto.orderStatus;
+await checkOrder.save();
+
+return {message: "Order updated successfully", data: {checkOrder}};
+
   }
+
 }

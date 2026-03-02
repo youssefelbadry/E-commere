@@ -50,8 +50,8 @@ async applyCoupon(req: any, code: string) {
     user: req.user._id,
   });
 
-  if (!cart) {
-    throw new BadRequestException("Cart not found");
+  if (!cart || !cart.items.length) {
+    throw new BadRequestException("Cart not found or empty");
   }
 
   const coupon = await this._couponModel.findOne({
@@ -64,18 +64,25 @@ async applyCoupon(req: any, code: string) {
     throw new BadRequestException("Invalid or expired coupon");
   }
 
-  if (coupon.maxUsage > 0 &&
-      coupon.usageCount >= coupon.maxUsage) {
+  if (
+    coupon.maxUsage > 0 &&
+    coupon.usageCount >= coupon.maxUsage
+  ) {
     throw new BadRequestException("Coupon usage limit reached");
   }
 
-  cart.discount =
-    (cart.subTotalPrice * coupon.discountPercent) / 100;
+  const subTotal = cart.subTotalPrice;
 
-  await cart.save()
+  cart.discount =
+    (subTotal * coupon.discountPercent) / 100;
+
+  cart.couponCode = coupon.code;
+
+  await cart.save();
 
   return {
     message: "Coupon applied successfully",
+    couponCode: cart.couponCode,
     discount: cart.discount,
     totalPrice: cart.totalPrice,
   };

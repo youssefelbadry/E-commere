@@ -1,55 +1,56 @@
 import { MongooseModule, Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument, Types } from "mongoose";
-import { ICoupon } from "lib/ICoupon/coupon.interface";
-import { v4 as uuid } from "uuid";
 import { IOrder } from "lib/IOrder/order.interface";
 import { IOrderItem, orderStatus, paymentMethod } from "lib/IOrder/create-order.interface";
 @Schema({ timestamps: true })
 export class Order implements IOrder {
-    @Prop({
-        type: Types.ObjectId,
-        ref: "Cart",
-        required: true,
-    })  
-cartId: Types.ObjectId;
 
-@Prop({
+  @Prop({ type: Types.ObjectId, ref: "User", required: true })
+  user: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: "Cart", required: true })
+  cartId: Types.ObjectId;
+
+  @Prop({
+    type: [
+      {
+        product: { type: Types.ObjectId, required: true },
+        quantity: { type: Number, required: true },
+        price: { type: Number, required: true },
+      },
+    ],
     required: true,
-})
-items : IOrderItem[];
+  })
+  items: IOrderItem[];
 
-couponCode?: string;
+  @Prop({type:Boolean,required:false})
+  couponCode?: boolean;
 
-@Prop({
-    type: String,
-    required: true,
-})
-address: string;
-paymentMethod: paymentMethod;
+  @Prop({ required: true })
+  address: string;
 
-@Prop({
-    type: String,
-    required: true,
-})
-orderStatus: orderStatus;
+  @Prop({ required: true })
+  paymentMethod: paymentMethod;
 
-@Prop({
-    type: Number,
-    required: true,
-})
-totalPrice: number;
+  @Prop({ required: true })
+  orderStatus: orderStatus;
 
-@Prop({
-    type: Number,
-    required: true,
-})
-subTotalPrice: number;
+  @Prop({ required: true })
+  subTotalPrice: number;
 
-tax: number;
+  @Prop({ required: true })
+  tax: number;
 
-discount: number;
+  @Prop({ required: true })
+  shipping: number;
 
+  @Prop({ required: true })
+  discount: number;
+
+  @Prop({ required: true })
+  totalPrice: number;
 }
+
 
 export const OrderSchema = SchemaFactory.createForClass(Order);
 export type HOrderDoc = HydratedDocument<Order>;
@@ -61,10 +62,5 @@ export const OrderModel = MongooseModule.forFeature([
   },
 ]);
 
-OrderSchema.pre("save" , async function(){
-   this.tax =  0.14;
-   this.discount = this.subTotalPrice * 0.1;
-   this.totalPrice = this.subTotalPrice + this.tax - this.discount;
-})
 
 
