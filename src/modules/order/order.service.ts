@@ -18,7 +18,7 @@ export class OrderService {
   ) {}
 
 //User
-async create(createOrderDto: CreateOrderDto, req: any) {
+async createOrderByUser(createOrderDto: CreateOrderDto, req: any) {
 
   const cart = await this._cartModel.findOne({
     user: req.user._id,
@@ -81,21 +81,21 @@ async create(createOrderDto: CreateOrderDto, req: any) {
   };
 }
 //User
-async findOrders(req: any) {
+async findOrdersByUser(req: any) {
     const orders = await this._orderModel.find({user: req.user._id});
     if(!orders) throw new NotFoundException("Orders not found");
     
     return {message: "Orders found successfully", data: {orders}};
   }
 //User
- async findOrder(req: any, id: string) {
+ async findOrderByUser(req: any, id: string) {
     const order = await this._orderModel.findById(id , {user: req.user._id});
     if(!order) throw new NotFoundException("Order not found");
     
     return {message: "Order found successfully", data: {order}};
   }
 //User
- async cancelOrder(req : any, id: string) {
+ async cancelOrderByUser(req : any, id: string) {
    const checkOrder = await this._orderModel.findById(id , {user: req.user._id})
 if(!checkOrder) throw new NotFoundException("Order not founded")
 
@@ -116,7 +116,7 @@ return {message: "Order cancelled successfully", data: {checkOrder}};
   }
 
   //ADMINS
- async updateOrder(id: string, updateOrderDto: UpdateOrderDto) {
+ async updateOrderForAdmin(id: string, updateOrderDto: UpdateOrderDto) {
 const checkCart = await this._cartModel.findOne({user :new Types.ObjectId(id)})
 if(!checkCart) throw new NotFoundException("Cart not found");
 
@@ -129,5 +129,21 @@ await checkOrder.save();
 return {message: "Order updated successfully", data: {checkOrder}};
 
   }
+
+  //Admins
+  async findOrdersForAdmin() {
+    const orders = await this._orderModel.find().populate("user" , "username email").sort({createdAt: -1});
+    return {message: "Orders found successfully", data: {orders}};
+  }
+
+  //Admins
+  async findOrderForAdmin(id: string) {
+    const order = await this._orderModel.findById(id).populate("user" , "username email");
+    if(!order) throw new NotFoundException("Order not found");
+    
+    return {message: "Order found successfully", data: {order}};
+  }
+
+
 
 }

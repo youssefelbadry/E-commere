@@ -18,27 +18,45 @@ export class OrderController {
 @Post("create-order") 
 @Roles(Role.USER)
   create(@Body(new ValidationPipe()) createOrderDto: CreateOrderDto,@Req() req: any) {
-    return this.orderService.create(createOrderDto, req);
+    return this.orderService.createOrderByUser(createOrderDto, req);
   }
 
-@Get()
+@Get("getMyOrders")
 @Roles(Role.USER)
-  findAll() {
-    return this.orderService.findAll();
+  findAll(@Req() req: any) {
+    return this.orderService.findOrdersByUser(req);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.orderService.findOne(+id);
+  @Get('getMyOrder/:id')
+  @Roles(Role.USER)
+  findOne(@Param('id') id: string, @Req() req: any) {
+    return this.orderService.findOrderByUser(req, id);
+  }
+  
+  @Get('cancelOrder/:id')
+  @Roles(Role.USER)
+  cancelOrder(@Param('id') id: string, @Req() req: any) {
+    return this.orderService.cancelOrderByUser(req, id);
+  }
+    @Get('getOrderForAdmin/:id')
+      @Roles(Role.ADMIN)
+      findOrderForAdmin(@Param('id') id: string) {
+        return this.orderService.findOrderForAdmin(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateOrderDto: UpdateOrderDto) {
-    return this.orderService.update(+id, updateOrderDto);
+@Get("getOrdersForAdmin")
+@Roles(Role.ADMIN)
+  findAllForAdmin() {
+    return this.orderService.findOrdersForAdmin();
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.orderService.remove(+id);
+
+  @Patch('updateOrderStatus/:id')
+  @Roles(Role.ADMIN)
+  updateOrderStatus(@Param('id') id: string, @Body(new ValidationPipe()) updateOrderDto: UpdateOrderDto) {
+    return this.orderService.updateOrderForAdmin(id, updateOrderDto);
   }
+
+
 }
+
