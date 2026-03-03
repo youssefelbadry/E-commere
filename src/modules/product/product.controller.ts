@@ -41,7 +41,7 @@ export class ProductController {
     return this.productService.createProduct(req, CreateProductDto, file);
   }
 
-  @Get()
+  @Get("getProducts")
   @Roles(Role.USER)
   findAll() {
     return this.productService.findAllProducts();

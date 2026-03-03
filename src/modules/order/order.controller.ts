@@ -14,36 +14,39 @@ import { Roles } from 'src/common/decorator/role.decorator';
 @Controller('order')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
-
+// User can create order
 @Post("create-order") 
 @Roles(Role.USER)
   create(@Body(new ValidationPipe()) createOrderDto: CreateOrderDto,@Req() req: any) {
     return this.orderService.createOrderByUser(createOrderDto, req);
   }
-
+// User can get all orders
 @Get("getMyOrders")
 @Roles(Role.USER)
   findAll(@Req() req: any) {
     return this.orderService.findOrdersByUser(req);
   }
-
+// User can get order by id
   @Get('getMyOrder/:id')
   @Roles(Role.USER)
   findOne(@Param('id') id: string, @Req() req: any) {
     return this.orderService.findOrderByUser(req, id);
   }
-  
-  @Get('cancelOrder/:id')
+  // User can cancel order
+  @Patch('cancelOrder/:id')
   @Roles(Role.USER)
   cancelOrder(@Param('id') id: string, @Req() req: any) {
     return this.orderService.cancelOrderByUser(req, id);
   }
+
+// Admin can get order for admin
     @Get('getOrderForAdmin/:id')
       @Roles(Role.ADMIN)
       findOrderForAdmin(@Param('id') id: string) {
         return this.orderService.findOrderForAdmin(id);
   }
 
+// Admin can get all orders for admin
 @Get("getOrdersForAdmin")
 @Roles(Role.ADMIN)
   findAllForAdmin() {
@@ -51,6 +54,7 @@ export class OrderController {
   }
 
 
+// Admin can update order status
   @Patch('updateOrderStatus/:id')
   @Roles(Role.ADMIN)
   updateOrderStatus(@Param('id') id: string, @Body(new ValidationPipe()) updateOrderDto: UpdateOrderDto) {

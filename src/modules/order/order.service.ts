@@ -82,14 +82,14 @@ async createOrderByUser(createOrderDto: CreateOrderDto, req: any) {
 }
 //User
 async findOrdersByUser(req: any) {
-    const orders = await this._orderModel.find({user: req.user._id});
+    const orders = await this._orderModel.find({user: req.user._id}).populate("user" , "firstName lastName email");
     if(!orders) throw new NotFoundException("Orders not found");
     
     return {message: "Orders found successfully", data: {orders}};
   }
 //User
  async findOrderByUser(req: any, id: string) {
-    const order = await this._orderModel.findById(id , {user: req.user._id});
+    const order = await this._orderModel.findById(id , {user: req.user._id}).populate("user" , "firstName lastName email");
     if(!order) throw new NotFoundException("Order not found");
     
     return {message: "Order found successfully", data: {order}};
@@ -132,13 +132,13 @@ return {message: "Order updated successfully", data: {checkOrder}};
 
   //Admins
   async findOrdersForAdmin() {
-    const orders = await this._orderModel.find().populate("user" , "username email").sort({createdAt: -1});
+    const orders = await this._orderModel.find().populate("user" , "firstName lastName email").sort({createdAt: -1});
     return {message: "Orders found successfully", data: {orders}};
   }
 
   //Admins
   async findOrderForAdmin(id: string) {
-    const order = await this._orderModel.findById(id).populate("user" , "username email");
+    const order = await this._orderModel.findById(id).populate("user" , "firstName lastName email");
     if(!order) throw new NotFoundException("Order not found");
     
     return {message: "Order found successfully", data: {order}};
