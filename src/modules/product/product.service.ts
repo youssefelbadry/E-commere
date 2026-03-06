@@ -10,15 +10,15 @@ import { UpdateProductDto } from "./dto/update-product.dto";
 import { InjectModel } from "@nestjs/mongoose";
 import { HProductDoc, Product } from "src/DB/models/product.model";
 import { Model, Types } from "mongoose";
+import { ProductRepository } from "src/common/utils/repository/product.Repository";
 
 @Injectable()
 export class ProductService {
   constructor(
-    @InjectModel(Product.name)
-    private readonly _productModel: Model<HProductDoc>,
+    private readonly _productModel: ProductRepository,
   ) {}
   private async checkProduct(id: string) {
-    const check = await this._productModel.findById(id);
+    const check = await this._productModel.findById({id});
     if (!check) throw new NotFoundException("Product not founded");
     return check;
   }
@@ -31,16 +31,21 @@ export class ProductService {
     //   throw new BadRequestException("The file is product unique");
     // }
     const checkProduct = await this._productModel.findOne({
-      name: createProductDto.name,
+      filter :{
+        name: createProductDto.name,
+      }
     });
     if (checkProduct) {
       throw new ConflictException("Product already exists");
     }
     const createProduct = await this._productModel.create({
-      ...createProductDto,
-      name: createProductDto.name,
-      imageCover: file?.filename || "",
-      createdBy: req.user?._id as Types.ObjectId,
+      data :{
+        ...createProductDto,
+        name: createProductDto.name,
+        imageCover: file?.filename || "",
+        createdBy: req.user?._id as Types.ObjectId,
+      },
+     
     });
     if (!createProduct)
       throw new BadRequestException("Error in created product");
@@ -49,7 +54,7 @@ export class ProductService {
       message: "Product created successfully",
       data: { createProduct },
     };
-  }
+  } 
 
   async findAllProducts() {
     const getProducts = await this._productModel.find({});
@@ -60,7 +65,7 @@ export class ProductService {
   }
 
   async findOneProduct(slug: string) {
-    const product = await this._productModel.findOne({ slug });
+    const product = await this._productModel.findOne({filter: { slug }});
 
     if (!product) {
       throw new NotFoundException("Product not found");
@@ -73,12 +78,16 @@ export class ProductService {
   }
   async updateProduct(id: string, updateProductDto: UpdateProductDto) {
     const updatedProduct = await this._productModel.findByIdAndUpdate(
-      id,
-      { ...updateProductDto },
-      {
+    {id,update:{
+      ...updateProductDto,
+      },
+      options:{
         new: true,
         runValidators: true,
-      },
+      }
+    },
+
+  
     );
 
     if (!updatedProduct) {

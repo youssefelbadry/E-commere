@@ -7,7 +7,6 @@ import {
   IsMongoId,
   ArrayNotEmpty,
 } from "class-validator";
-
 export class CreateCategoryDto {
   @IsString()
   @MinLength(2)

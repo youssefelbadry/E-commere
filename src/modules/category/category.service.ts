@@ -10,12 +10,12 @@ import { InjectModel } from "@nestjs/mongoose";
 import { Category, HCategoryDoc } from "src/DB/models/category.model";
 import { Model, Types } from "mongoose";
 import { FindOneBrandDto } from "src/modules/brands/dto/create-brand.dto";
+import { CategoryRepository } from "src/common/utils/repository/category.Repository";
 
 @Injectable()
 export class CategoryService {
   constructor(
-    @InjectModel(Category.name)
-    private readonly _categoryModel: Model<HCategoryDoc>,
+   private readonly _categoryModel: CategoryRepository,
   ) {}
   async createCategory(
     req: any,
@@ -24,8 +24,11 @@ export class CategoryService {
   ) {
     if (!file) throw new BadRequestException("The file is category unique");
     const checkCategory = await this._categoryModel.findOne({
-      name: createCategoryDto.name,
-      createdBy: req.user?._id as Types.ObjectId,
+      filter:{
+        name: createCategoryDto.name,
+        createdBy: req.user?._id as Types.ObjectId,
+      }
+     
     });
 
     if (checkCategory) {
@@ -33,9 +36,12 @@ export class CategoryService {
     }
 
     const category = await this._categoryModel.create({
-      ...createCategoryDto,
-      createdBy: req.user?._id as Types.ObjectId,
-      image: file.filename,
+      data: {
+        ...createCategoryDto,
+        createdBy: req.user?._id as Types.ObjectId,
+        image: file.filename,
+        brands: createCategoryDto.brands?.map((id) => new Types.ObjectId(id)),
+      },
     });
 
     return {
@@ -60,7 +66,9 @@ export class CategoryService {
 
   async findOneCategory(createCategoryDto: FindOneBrandDto) {
     const checkCategory = await this._categoryModel.findOne({
-      slug: createCategoryDto.slug,
+      filter: {
+        slug: createCategoryDto.slug,
+      },
     });
     if (!checkCategory) throw new NotFoundException("Category not found");
 
@@ -75,7 +83,7 @@ export class CategoryService {
     updateCategoryDto: UpdateCategoryDto,
     file?: Express.Multer.File,
   ) {
-    const checkCategory = await this._categoryModel.findById(id);
+    const checkCategory = await this._categoryModel.findById({id});
     if (!checkCategory) throw new NotFoundException("Category not founded");
 
     if (updateCategoryDto.name) {

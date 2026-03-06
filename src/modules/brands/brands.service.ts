@@ -12,12 +12,12 @@ import { HUserDoc, User } from "src/DB/models/user.model";
 import { Model, Types } from "mongoose";
 import { Brand, HBrandDoc } from "src/DB/models/brand.model";
 import { AuthGuard } from "src/common/guards/auth.guard";
+import { BrandRepository } from "src/common/utils/repository/brand.Repository";
 
 @Injectable()
 export class BrandsService {
   constructor(
-    // @InjectModel(User.name) private readonly _userModel: Model<HUserDoc>,
-    @InjectModel(Brand.name) private readonly _brandModel: Model<HBrandDoc>,
+   private readonly _brandModel:BrandRepository,
   ) {}
   async createBrand(
     req: any,
@@ -29,15 +29,19 @@ export class BrandsService {
     }
 
     const checkBrand = await this._brandModel.findOne({
+      filter:{
       name: createBrandDto.name,
+      }
     });
 
     if (checkBrand) throw new ConflictException("Brand already exists");
 
     const brand = await this._brandModel.create({
-      name: createBrandDto.name,
-      logo: file.filename,
-      createdBy: req.user?._id as Types.ObjectId,
+      data: {
+        name: createBrandDto.name,
+        logo: file.filename,
+        createdBy: req.user?._id as Types.ObjectId,
+      },
     });
     if (!brand) throw new BadRequestException("Brand not created");
     return { message: "The brand added successfully", data: { brand } };
@@ -58,7 +62,9 @@ export class BrandsService {
 
   async findOneBrand(FindOneBrandDto: FindOneBrandDto) {
     const checkBrand = await this._brandModel.findOne({
-      slug: FindOneBrandDto.slug,
+      filter: {
+        slug: FindOneBrandDto.slug,
+      },
     });
     if (!checkBrand) throw new NotFoundException("Brand Not founded");
 
@@ -70,7 +76,7 @@ export class BrandsService {
     updateBrandDto: UpdateBrandDto,
     file?: Express.Multer.File,
   ) {
-    const checkBrand = await this._brandModel.findById(id);
+    const checkBrand = await this._brandModel.findById({id});
     if (!checkBrand) throw new NotFoundException("Brand not founded");
     if (updateBrandDto.name) {
       checkBrand.name = updateBrandDto.name;

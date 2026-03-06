@@ -1,44 +1,48 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCouponDto } from './dto/create-coupon.dto';
 import { UpdateCouponDto } from './dto/update-coupon.dto';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { Coupon } from 'src/DB/models/coupon.model';
 import { Cart } from 'src/DB/models/cart.model';
+import { CouponRepository } from 'src/common/utils/repository/coupon.Repository';
+import { CartRepository } from 'src/common/utils/repository/cart.Repository';
 
 @Injectable()
 export class CouponService {
-  constructor(@InjectModel(Coupon.name) private readonly _couponModel: Model<Coupon>,
-@InjectModel(Cart.name) private readonly _cartModel: Model<Cart>) {}
+  constructor(
+private readonly _couponModel: CouponRepository,
+private readonly _cartModel: CartRepository
+) {}
  async createCoupon(createCouponDto: CreateCouponDto) {
-    const checkCoupon = await this._couponModel.findOne({code :createCouponDto.code})
+    const checkCoupon = await this._couponModel.findOne({filter:{ code :createCouponDto.code}})
     if(checkCoupon) throw new ConflictException("Coupon already exists")
 
-      const coupon = await this._couponModel.create(createCouponDto)
+      const coupon = await this._couponModel.create({data:{ ...createCouponDto}})
       if(!coupon) throw new BadRequestException("Failed to create coupon")
       return {message :"Coupon created successfully", coupon}
   }
 
   async findCoupons() {
-    const coupons = await this._couponModel.find()
+    const coupons = await this._couponModel.find({})
     return { message : "Coupons found", count: coupons.length > 1 ? +coupons.length + " Coupons" : coupons.length === 1 ? "1 Coupon" : "No Coupons", data: {coupons}}
     
   }
 
   async findCouponByCode(code: string) {
-    const coupon = await this._couponModel.findOne({code})
+    const coupon = await this._couponModel.findOne({filter:{ code}})
     if(!coupon) throw new BadRequestException("Coupon not found")
     return { message : "Coupon found", data :{coupon} }
   }
 
   async update(code : string, updateCouponDto: UpdateCouponDto) {
-    const coupon = await this._couponModel.findOneAndUpdate({code}, updateCouponDto, {new : true})
+    const coupon = await this._couponModel.findOneAndUpdate({filter:{code}, update: updateCouponDto, options: {new : true}})
     if(!coupon) throw new BadRequestException("Failed to update coupon")
     return { message : "Coupon updated successfully", data :{coupon} }
   }
 
   async remove(code : string) {
-    const coupon = await this._couponModel.findOneAndDelete({code})
+    const coupon = await this._couponModel.findByIdAndDelete(code)
     if(!coupon) throw new BadRequestException("Failed to delete coupon")
     return { message : "Coupon deleted successfully", data :{coupon} };
   }
@@ -47,7 +51,9 @@ export class CouponService {
 async applyCoupon(req: any, code: string) {
 
   const cart = await this._cartModel.findOne({
-    user: req.user._id,
+    filter :{
+    user: req.user._id
+  }
   });
 
   if (!cart || !cart.items.length) {
@@ -55,9 +61,11 @@ async applyCoupon(req: any, code: string) {
   }
 
   const coupon = await this._couponModel.findOne({
-    code,
-    isActive: true,
-    expiresAt: { $gt: new Date() },
+    filter:{
+      code,
+      isActive: true,
+      expiresAt: { $gt: new Date() },
+    }
   });
 
   if (!coupon) {
@@ -90,7 +98,9 @@ async applyCoupon(req: any, code: string) {
 
 async clearCoupon(req: any) {
   const cart = await this._cartModel.findOne({
-    user: req.user._id,
+    filter:{
+      user: req.user._id,
+    }
   });
 
   if (!cart) {

@@ -8,10 +8,12 @@ import { JwtService } from "@nestjs/jwt";
 import { AuthGuard } from "src/common/guards/auth.guard";
 import { CategoryModel } from "src/DB/models/category.model";
 import { CouponModel } from "src/DB/models/coupon.model";
+import { CartRepository } from "src/common/utils/repository/cart.Repository";
+import { ProductRepository } from "src/common/utils/repository/product.Repository";
 
 @Module({
   imports: [CartModel, ProductModel, UserModel, CategoryModel ,CouponModel],
   controllers: [CartController],
-  providers: [CartService, JwtService, AuthGuard],
+  providers: [CartService, JwtService, AuthGuard , CartRepository , ProductRepository],
 })
 export class CartModule {}

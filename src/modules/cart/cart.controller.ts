@@ -37,8 +37,8 @@ export class CartController {
 
   @Get("getAllCart")
   @Roles(Role.ADMIN)
-  findAll(@Req() req: any) {
-    return this.cartService.findAll(req);
+  findAll() {
+    return this.cartService.findAll();
   }
 
   @Get("getMyCart")

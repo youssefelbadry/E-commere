@@ -1,3 +1,4 @@
+import { OtpModel } from "./../../DB/models/otp.model";
 import {
   BadRequestException,
   ConflictException,
@@ -17,30 +18,31 @@ import { HOtpDoc, Otp } from "src/DB/models/otp.model";
 import { generateOtp } from "src/common/utils/email/otp.email";
 import { EmailEvent } from "src/common/utils/email/emailSubjectEnum";
 import { compareHash } from "src/common/utils/hash/hash.util";
-import { emailEvents } from "src/common/utils/events/email.event";
 import { randomUUID } from "node:crypto";
 import { JwtService } from "@nestjs/jwt";
+import { UserRepository } from "src/common/utils/repository/user.reopsitory";
+import { OtpRepository } from "src/common/utils/repository/otp.Repository";
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectModel(User.name) private readonly userModel: Model<HUserDoc>,
-    @InjectModel(Otp.name) private readonly otpModel: Model<HOtpDoc>,
-    private jwtService: JwtService,
+    private readonly _userModel: UserRepository,
+    private readonly _otpModel: OtpRepository,
+    private readonly jwtService: JwtService,
   ) {}
 
   async createOtp(
     userId: Types.ObjectId,
     type: EmailEvent = EmailEvent.ConfirmEmail,
   ) {
-    await this.otpModel.create([
-      {
+    await this._otpModel.create({
+      data: {
         createdBy: userId,
         code: generateOtp(),
         expiredAt: new Date(Date.now() + 2 * 60 * 1000),
         type,
       },
-    ]);
+    });
   }
 
   async signup(body: ISignUpDTO) {
@@ -54,17 +56,19 @@ export class AuthService {
       gender,
     }: ISignUpDTO = body;
 
-    const checkUser = await this.userModel.findOne({ email });
+    const checkUser = await this._userModel.findOne({ filter: { email } });
     if (checkUser) throw new ConflictException("User already exists");
 
-    const user = await this.userModel.create({
-      firstName,
-      email,
-      lastName,
-      password,
-      gender,
-      phone,
-      age,
+    const user = await this._userModel.create({
+      data: {
+        firstName,
+        email,
+        lastName,
+        password,
+        gender,
+        phone,
+        age,
+      },
     });
 
     if (!user) throw new BadRequestException("SignUp is failed");
@@ -76,14 +80,16 @@ export class AuthService {
   async resetOtp(body: IResetOtpDTO) {
     const { email, type } = body;
 
-    const checkUser = await this.userModel.findOne({
-      email,
+    const checkUser = await this._userModel.findOne({
+      filter: { email },
     });
     if (!checkUser) throw new NotFoundException("User not found");
 
-    const checkOtp = await this.otpModel.findOne({
-      createdBy: checkUser?._id,
-      type,
+    const checkOtp = await this._otpModel.findOne({
+      filter: {
+        createdBy: checkUser?._id,
+        type,
+      },
     });
 
     if (checkOtp?.type === type)
@@ -97,25 +103,31 @@ export class AuthService {
   async confirmEmail(body: IConfirmEmailDTO) {
     const { email, otp } = body;
 
-    const checkUser = await this.userModel.findOne({
-      email,
-      isEmailConfirmed: { $exists: false },
+    const checkUser = await this._userModel.findOne({
+      filter: {
+        email,
+        isEmailConfirmed: { $exists: false },
+      },
     });
     if (!checkUser) throw new NotFoundException("User not found");
 
-    const checkOtp = await this.otpModel.findOne({ createdBy: checkUser?._id });
+    const checkOtp = await this._otpModel.findOne({
+      filter: {
+        createdBy: checkUser?._id,
+      },
+    });
 
     if (!(await compareHash(otp as string, checkOtp?.code as string)))
       throw new BadRequestException("Otp is not valid please reset anther otp");
 
-    const user = await this.userModel.findOneAndUpdate(
-      { email },
-      {
+    const user = await this._userModel.findOneAndUpdate({
+      filter: { email },
+      update: {
         $set: { isEmailConfirmed: new Date() },
         $inc: { __v: 1 },
       },
-      { new: true },
-    );
+      options: { new: true },
+    });
 
     if (!user) throw new BadRequestException("Email is not confirmed");
 
@@ -123,9 +135,11 @@ export class AuthService {
   }
   async login(login: ILoginDTO) {
     const { email, password } = login;
-    const user = await this.userModel.findOne({
-      email,
-      isEmailConfirmed: { $exists: true },
+    const user = await this._userModel.findOne({
+      filter: {
+        email,
+        isEmailConfirmed: { $exists: true },
+      },
     });
     if (!user) throw new NotFoundException("User not found");
 

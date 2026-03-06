@@ -44,6 +44,7 @@ export class Category {
     default: [],
   })
   brands: Types.ObjectId[];
+  
 }
 
 export const CategorySchema = SchemaFactory.createForClass(Category);

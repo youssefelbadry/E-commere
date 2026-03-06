@@ -7,28 +7,38 @@ import { InjectModel } from "@nestjs/mongoose";
 import { HProductDoc, Product } from "src/DB/models/product.model";
 import { Cart, HCartDoc } from "src/DB/models/cart.model";
 import { log } from "node:console";
+import { ProductRepository } from "src/common/utils/repository/product.Repository";
+import { CartRepository } from "src/common/utils/repository/cart.Repository";
 
 @Injectable()
 export class CartService {
   constructor(
-    @InjectModel(Category.name)
-    private readonly _categoryModel: Model<HCategoryDoc>,
-    @InjectModel(Product.name)
-    private readonly _productModel: Model<HProductDoc>,
-    @InjectModel(Cart.name)
-    private readonly _cartModel: Model<HCartDoc>,
+   
+    private readonly _productModel:ProductRepository,
+    private readonly _cartModel: CartRepository,
   ) {}
    private async checkCart(userId: string) {
     const cart = await this._cartModel.findOne({
+      filter : 
+      {
       user: userId,
-    }).populate("items.product");
+      },
+      options : {
+        populate : [
+          {
+            path : "items.product",
+            select : "name price"
+          }
+        ]
+      }
+    })
     if(!cart)
     return cart;
   }
 
 async addToCart(req: any, dto: CreateCartDto) {
 
-  const product = await this._productModel.findById(dto.product);
+  const product = await this._productModel.findById({id: dto.product});
 
   if (!product) {
     throw new NotFoundException("Product not found");
@@ -38,18 +48,21 @@ async addToCart(req: any, dto: CreateCartDto) {
     throw new BadRequestException("Quantity not available");
   }
 
-  let cart = await this._cartModel.findOne({ user: req.user._id });
+  let cart = await this._cartModel.findOne({filter:{ user: req.user._id} });
 
   if (!cart) {
     cart = await this._cartModel.create({
-      user: req.user._id,
-      items: [
+      data:{
+        user: req.user._id,
+         items: [
         {
           product: product._id.toString(),
           price: product.price,
           quantity: dto.quantity,
         },
       ],
+      },
+     
     });
 
     return { message: "Cart created", data: cart };
@@ -74,16 +87,22 @@ async addToCart(req: any, dto: CreateCartDto) {
   return { message: "Cart updated", data: cart };
 }
 
-  async findAll(req: any) {
-    const cart = await this.checkCart(req.user._id);
+  async findAll() {
+    const cart = await this._cartModel.find({})
     return {
       message: "Cart found successfully",
-      data: cart,
+      data: {cart},
     };
   }
 
   async findOne(req: any) {
-    const cart = await this.checkCart(req.user._id);
+    const cart = await this._cartModel.findOne({filter :{user: req.user._id} , options : {
+populate :[{
+  path : "items.product",
+  select : "name price"
+}]
+    }} )
+    if(!cart) throw new NotFoundException("Cart not found");
     return {
       message: "Cart found successfully",
       data: cart,
@@ -93,7 +112,10 @@ async addToCart(req: any, dto: CreateCartDto) {
 async updateQuantity(req: any, updateCartDto: UpdateCartDto) {
 
   const cart = await this._cartModel.findOne({
+    filter : {
     user: req.user._id,
+
+    }
   });
 
   if (!cart) {
@@ -126,7 +148,9 @@ async updateQuantity(req: any, updateCartDto: UpdateCartDto) {
 
 async removeItem(req: any, productId: string) {
   const cart = await this._cartModel.findOne({
+    filter:{
     user: req.user._id,
+    }
   });
 
   if (!cart) {
@@ -152,7 +176,9 @@ async removeItem(req: any, productId: string) {
 }
  async clearCart(req: any) {
   const cart = await this._cartModel.findOne({
+    filter :{
     user: req.user._id,
+    }
   });
 
   if (!cart) {
