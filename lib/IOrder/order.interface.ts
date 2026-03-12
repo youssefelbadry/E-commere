@@ -1,5 +1,10 @@
 import { Types } from "mongoose";
-import { ICreateOrder, IOrderItem, orderStatus, paymentMethod } from "./create-order.interface";
+import {
+  ICreateOrder,
+  IOrderItem,
+  orderStatus,
+  paymentMethod,
+} from "./create-order.interface";
 
 export interface IOrder extends ICreateOrder {
   user: Types.ObjectId;
@@ -14,5 +19,5 @@ export interface IOrder extends ICreateOrder {
   discount: number;
   totalPrice: number;
 
-  couponCode?: boolean;
-}       
+  couponCode?: string;
+}

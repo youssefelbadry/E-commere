@@ -11,6 +11,7 @@ async function bootstrap() {
   const logger = new Logger("Bootstrap");
   const port = process.env.PORT ?? 3000;
   app.use("/uploads", express.static("./src/uploads"));
+  app.use("/payments/webhook", express.raw({ type: "application/json" }));
   await app.listen(port);
   logger.log(`Application is running on port ${port}`);
   console.log(`Application is running on port ${port}`);

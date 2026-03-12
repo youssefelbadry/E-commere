@@ -4,21 +4,28 @@ export interface ICreateOrder {
   address: string;
   paymentMethod: paymentMethod;
 }
-export interface IOrderItem{
-    productId: Types.ObjectId;
-    quantity: number;
-    price: number;
+export interface IOrderItem {
+  productId: Types.ObjectId;
+  quantity: number;
+  price: number;
 }
 
-export enum orderStatus{
-    PENDING = 'pending',
-    SHIPPED ='shipped',
-    DELIVERED = 'delivered',
-    CANCELLED = 'cancelled',
+export enum orderStatus {
+  PENDING = "pending",
+  SHIPPED = "shipped",
+  DELIVERED = "delivered",
+  CANCELLED = "cancelled",
 }
 
-export enum paymentMethod{
-    CASH = 'cash',
-    CREDIT_CARD = 'credit_card',
-    PAYPAL = 'paypal',
-}   
+export enum paymentMethod {
+  CASH = "cash",
+  CREDIT_CARD = "card",
+  PAYPAL = "paypal",
+}
+
+export enum paymentStatus {
+  PENDING = "pending",
+  PAID = "paid",
+  FAILED = "failed",
+  REFUNDED = "refunded",
+}

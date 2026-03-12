@@ -5,6 +5,7 @@ import {
   IOrderItem,
   orderStatus,
   paymentMethod,
+  paymentStatus,
 } from "lib/IOrder/create-order.interface";
 @Schema({ timestamps: true })
 export class Order implements IOrder {
@@ -23,11 +24,12 @@ export class Order implements IOrder {
       },
     ],
     required: true,
+    ref: "Product",
   })
   items: IOrderItem[];
 
-  @Prop({ type: Boolean, required: false })
-  couponCode?: boolean;
+  @Prop({ type: String, required: false, ref: "Coupon" })
+  couponCode?: string;
 
   @Prop({ required: true })
   address: string;
@@ -35,8 +37,14 @@ export class Order implements IOrder {
   @Prop({ required: true })
   paymentMethod: paymentMethod;
 
+  @Prop({ required: false })
+  paymentSessionId?: string;
+
   @Prop({ required: true })
   orderStatus: orderStatus;
+
+  @Prop({ required: true })
+  paymentStatus: paymentStatus;
 
   @Prop({ required: true })
   subTotalPrice: number;
@@ -51,7 +59,19 @@ export class Order implements IOrder {
   discount: number;
 
   @Prop({ required: true })
+  discountPercent: number;
+
+  @Prop({ required: true })
   totalPrice: number;
+
+  @Prop({ required: false })
+  intentId?: string;
+
+  @Prop({ required: false })
+  refundId?: string;
+
+  @Prop({ required: false })
+  refundAt?: Date;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

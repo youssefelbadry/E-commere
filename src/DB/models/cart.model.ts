@@ -46,13 +46,16 @@ export class Cart implements ICart {
 
   @Prop({ default: 0 })
   shipping: number;
-  
+
   @Prop({ default: 0 })
   discount: number;
 
   @Prop({ default: 0 })
+  discountPercent: number;
+
+  @Prop({ default: 0 })
   totalPrice: number;
-  
+
   @Prop({ default: null })
   couponCode?: string;
 }
@@ -71,7 +74,10 @@ CartSchema.pre("save", async function () {
   this.subTotalPrice = this.items.reduce((acc, cur) => {
     return acc + cur.price * cur.quantity;
   }, 0);
-  this.tax =Math.floor(this.subTotalPrice * 0.14);
+  this.tax = Math.floor(this.subTotalPrice * 0.14);
   this.shipping = this.subTotalPrice ? 100 : 0;
-  this.totalPrice = Math.max(0,this.subTotalPrice + this.tax + this.shipping - (this.discount || 0));
+  this.totalPrice = Math.max(
+    0,
+    this.subTotalPrice + this.tax + this.shipping - (this.discount || 0),
+  );
 });

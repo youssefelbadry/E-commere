@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import Stripe from "stripe";
 
 @Injectable()
@@ -36,5 +36,16 @@ export class PaymentService {
     });
 
     return session;
+  }
+
+  async createPaymentMethod(data: Stripe.PaymentMethodCreateParams) {
+    const paymentMethod = await this.stripe.paymentMethods.create(data);
+    console.log(paymentMethod);
+    return paymentMethod;
+  }
+
+  async createRefund(data: Stripe.RefundCreateParams) {
+    const refund = await this.stripe.refunds.create(data);
+    return refund;
   }
 }

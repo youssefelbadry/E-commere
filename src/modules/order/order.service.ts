@@ -1,23 +1,30 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from "@nestjs/common";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { UpdateOrderDto } from "./dto/update-order.dto";
-import { Cart } from "src/DB/models/cart.model";
+import { Cart, HCartDoc } from "src/DB/models/cart.model";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
 import {
   IOrderItem,
   orderStatus,
   paymentMethod,
+  paymentStatus,
 } from "lib/IOrder/create-order.interface";
 import { Order } from "src/DB/models/order.model";
 import { Product } from "src/DB/models/product.model";
-import { Coupon } from "src/DB/models/coupon.model";
+import { Coupon, HCouponDoc } from "src/DB/models/coupon.model";
 import { BadRequestException } from "@nestjs/common";
 import { CartRepository } from "src/DB/repository/cart.Repository";
 import { OrderRepository } from "src/DB/repository/order.Repository";
 import { CouponRepository } from "src/DB/repository/coupon.Repository";
 import { ProductRepository } from "src/DB/repository/product.Repository";
 import { PaymentService } from "src/common/services/payment/payment.service";
+import Stripe from "stripe";
+import { duration } from "node_modules/zod/v4/core/regexes.cjs";
 @Injectable()
 export class OrderService {
   constructor(
@@ -63,8 +70,10 @@ export class OrderService {
         tax: cart.tax,
         shipping: cart.shipping,
         discount: cart.discount,
+        discountPercent: cart.discountPercent,
         totalPrice: cart.totalPrice,
-        couponCode: cart.couponCode ? true : false,
+        couponCode: cart.couponCode,
+        paymentStatus: paymentStatus.PENDING,
       },
     });
 
@@ -236,7 +245,9 @@ export class OrderService {
     }
 
     const amount = checkOrder.totalPrice ?? checkOrder.subTotalPrice ?? 0;
-
+    if (!amount || amount <= 0) {
+      throw new BadRequestException("Invalid order amount");
+    }
     const line_items = [
       {
         price_data: {
@@ -262,10 +273,104 @@ export class OrderService {
         userId: req.user._id.toString(),
       },
     });
+    if (!session) {
+      throw new InternalServerErrorException("Payment session not created");
+    }
+
+    checkOrder.paymentSessionId = session.id;
+    checkOrder.intentId = session.payment_intent as string;
+    checkOrder.paymentStatus = paymentStatus.PAID;
+    await checkOrder.save();
 
     return {
       message: "Payment session created successfully",
       url: session.url,
+      intentId: session.payment_intent as string,
     };
   }
+
+  async createRefund(orderId: string, req: any) {
+    const order = await this._orderModel.findOne({
+      filter: {
+        _id: new Types.ObjectId(orderId),
+        user: req.user._id,
+        paymentStatus: paymentStatus.PAID,
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException("Order not found");
+    }
+
+    if (!order.intentId) {
+      throw new BadRequestException("Order has no payment intent");
+    }
+    if (order.orderStatus === orderStatus.DELIVERED) {
+      throw new BadRequestException("Order is already delivered");
+    }
+    if (order.orderStatus === orderStatus.SHIPPED) {
+      throw new BadRequestException("Order is already shipped");
+    }
+
+    const refund = await this._paymentService.createRefund({
+      payment_intent: order.intentId,
+      amount: order.totalPrice * 100,
+    });
+
+    const updatedOrder = await this._orderModel.findByIdAndUpdate({
+      id: orderId,
+      update: {
+        orderStatus: orderStatus.CANCELLED,
+        paymentStatus: paymentStatus.REFUNDED,
+        refundId: refund.id,
+        refundAt: new Date(),
+      },
+      options: { new: true },
+    });
+
+    return {
+      message: "Refund created successfully",
+      refund,
+      order: updatedOrder,
+    };
+  }
+
+  // async handleStripeWebhook(event: Stripe.Event) {
+  //   switch (event.type) {
+  //     case "checkout.session.completed": {
+  //       const session = event.data.object as Stripe.Checkout.Session;
+
+  //       if (session.payment_status !== "paid") return;
+
+  //       const orderId = session.metadata?.orderId;
+  //       const userId = session.metadata?.userId;
+
+  //       if (!orderId || !userId) return;
+
+  //       const order = await this._orderModel.findOne({
+  //         filter: {
+  //           _id: new Types.ObjectId(orderId),
+  //           user: new Types.ObjectId(userId),
+  //         },
+  //       });
+
+  //       if (!order) return;
+
+  //       if (order.paymentStatus === paymentStatus.PAID) return;
+
+  //       order.paymentStatus = paymentStatus.PAID;
+  //       order.orderStatus = orderStatus.PENDING;
+  //       order.paymentMethod = paymentMethod.CREDIT_CARD;
+  //       order.paymentSessionId = session.id;
+  //       order.intentId = session.payment_intent as string;
+
+  //       await order.save();
+
+  //       break;
+  //     }
+
+  //     default:
+  //       break;
+  //   }
+  // }
 }

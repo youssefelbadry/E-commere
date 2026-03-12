@@ -99,6 +99,7 @@ export class CouponService {
     const subTotal = cart.subTotalPrice;
 
     cart.discount = (subTotal * coupon.discountPercent) / 100;
+    cart.discountPercent = coupon.discountPercent;
 
     cart.couponCode = coupon.code;
 
@@ -107,6 +108,7 @@ export class CouponService {
     return {
       message: "Coupon applied successfully",
       couponCode: cart.couponCode,
+      discountPercent: coupon.discountPercent + "%",
       discount: cart.discount,
       totalPrice: cart.totalPrice,
     };
@@ -124,10 +126,13 @@ export class CouponService {
     }
 
     cart.discount = 0;
+    cart.discountPercent = 0;
+    cart.couponCode = "";
     await cart.save();
 
     return {
       message: "Coupon cleared successfully",
+      discountPercent: 0 + "%",
       discount: cart.discount,
       totalPrice: cart.totalPrice,
     };

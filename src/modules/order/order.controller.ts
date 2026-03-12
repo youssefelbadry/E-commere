@@ -9,6 +9,8 @@ import {
   ValidationPipe,
   UseGuards,
   Req,
+  HttpCode,
+  Header,
 } from "@nestjs/common";
 import { OrderService } from "./order.service";
 import { CreateOrderDto } from "./dto/create-order.dto";
@@ -83,4 +85,18 @@ export class OrderController {
   createPaymentSession(@Param("orderId") orderId: string, @Req() req: any) {
     return this.orderService.createPaymentSession(req, orderId);
   }
+
+  @Post("create-refund/:orderId")
+  @Roles(Role.USER)
+  createRefund(@Param("orderId") orderId: string, @Req() req: any) {
+    return this.orderService.createRefund(orderId, req);
+  }
+
+  // @Post("stripe-webhook")
+  // @HttpCode(200)
+  // @Header("Content-Type", "application/json")
+  // @Roles(Role.USER)
+  // handleStripeWebhook(@Req() req: any) {
+  //   return this.orderService.handleStripeWebhook(req);
+  // }
 }
