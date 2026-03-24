@@ -7,7 +7,7 @@
 
   <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
    
-   ## 📖 Project Overview
+  ## 📖 Project Overview
 
 A scalable and production-ready **E-commerce Backend System** built with **NestJS** and **TypeScript**.
 
@@ -28,51 +28,196 @@ A scalable and production-ready **E-commerce Backend System** built with **NestJ
 🔹 TypeScript  
 🔹 MongoDB (Mongoose)  
 🔹 JWT Authentication  
-🔹 Stripe  
-🔹 Zod & class-validator  
+🔹 Stripe (Payments)  
+🔹 Zod & class-validator (Validation)  
+🔹 Multer / Cloudinary (File Uploads)  
 
 ---
 
-## 🚀 Features
+## 🔐 Authentication & Security
 
-### 🔐 Authentication & Security
-✔ JWT Authentication  
-✔ Role-Based Access (USER / ADMIN)  
-✔ Guards (AuthGuard, RolesGuard)  
-✔ Email Confirmation & Reset Password (OTP)  
+✅ Signup / Login  
+✅ JWT Authentication  
+✅ Role-Based Access (USER / ADMIN)  
+✅ Guards (AuthGuard, RolesGuard)  
+✅ Password Hashing  
+✅ Email Confirmation (OTP)  
+✅ Reset Password (OTP)  
 
-### 🛍 Product System
-✔ Product CRUD with image upload  
-✔ Category & Brand relations  
+---
 
-### 🛒 Cart System
-✔ Add / Update / Remove items  
-✔ Dynamic pricing (tax, shipping, discount, total)  
+## 👤 User System
 
-### 🎟 Coupon System
-✔ Expiration & usage limits  
-✔ Apply / Remove coupon  
+✔ User Profile Management  
+✔ Upload Profile Image  
+✔ Role Management (Admin / User)  
 
-### 📦 Order System
-✔ Create order from cart  
-✔ Order lifecycle (cart → order → payment → status)  
+---
 
-### 💳 Payment
-✔ Stripe integration  
+## 🛍 Product System
+
+✔ Create / Update / Delete Product  
+✔ Upload Product Image  
+✔ Get Products (with filtering)  
+✔ Get Product by Slug  
+✔ Relation with Category & Brand  
+
+---
+
+## 🏷 Category & Brand System
+
+### Category
+✔ Create / Update / Delete  
+✔ Upload Image  
+✔ Get by Slug  
+
+### Brand
+✔ Create / Update / Delete  
+✔ Upload Logo  
+✔ Get by Slug  
+
+---
+
+## 🛒 Cart System
+
+✔ Add Product to Cart  
+✔ Update Quantity  
+✔ Remove Item  
+✔ Clear Cart  
+✔ Get My Cart  
+
+### Pricing Logic
+
+✔ Subtotal Calculation  
+✔ Tax Handling  
+✔ Shipping Fees  
+✔ Discount System  
+✔ Total Price Calculation  
+
+✔ Automatic price calculation using hooks  
+
+---
+
+## 🎟 Coupon System
+
+✔ Create / Update / Delete Coupon  
+✔ Apply Coupon to Cart  
+✔ Remove Coupon  
+
+### Rules
+
+✔ Expiration Date  
+✔ Usage Limit  
+✔ Active / Inactive Status  
+✔ Discount Calculation  
+
+---
+
+## 📦 Order System
+
+### User
+
+✔ Create Order from Cart  
+✔ Get My Orders  
+✔ Get Single Order  
+✔ Cancel Order  
+
+### Admin
+
+✔ Get All Orders  
+✔ Update Order Status  
+
+### Order Flow
+
+Cart → Order → Payment → Status  
+
+---
+
+## 💳 Payment System
+
+✔ Stripe Integration  
+✔ Secure Payment Handling  
+✔ Payment Status Tracking  
+
+---
+
+## ❤️ Wishlist System
+
+✔ Add Product to Wishlist  
+✔ Remove Product  
+✔ Get Wishlist  
+
+---
+
+## 🧠 Business Logic
+
+✔ Cart Pricing Engine  
+✔ Coupon Validation Logic  
+✔ Order Mapping from Cart  
+✔ Stock & Validation Handling  
 
 ---
 
 ## 🏗 Architecture
 
 🔹 Modular Architecture (NestJS)  
-🔹 Controller / Service / Repository layers  
-🔹 Generic BaseRepository (reusable CRUD)  
-🔹 Clean separation of concerns  
+🔹 Controller / Service / Repository Layers  
+🔹 Generic BaseRepository (Reusable CRUD)  
+🔹 Pagination & Query Handling  
+🔹 Clean Separation of Concerns  
 
 ---
 
-## 🧠 Business Logic
+## 🛡 Validation & Interceptors
 
-✔ Pricing engine (subtotal, tax, shipping, discount)  
-✔ Coupon validation system  
-✔ Cart → Order mapping  
+✔ DTO Validation  
+✔ Zod Validation  
+✔ class-validator  
+
+✔ Logging Interceptor  
+✔ Response Interceptor  
+
+---
+
+## 🔗 Database Models
+
+✔ User  
+✔ Product  
+✔ Category  
+✔ Brand  
+✔ Cart  
+✔ Coupon  
+✔ Order  
+✔ Wishlist  
+✔ OTP  
+
+---
+
+## 🔗 Relationships
+
+✔ Product → Category  
+✔ Product → Brand  
+✔ Cart → Products  
+✔ Order → User  
+✔ Order → Products  
+✔ Category → Brands  
+
+---
+
+## 🎯 What I Practiced
+
+✔ Building Scalable Backend Systems  
+✔ Real-World Business Logic Implementation  
+✔ Secure Authentication & Authorization  
+✔ Payment Integration (Stripe)  
+✔ Clean Architecture & Design Patterns  
+
+---
+
+## 🔮 Future Improvements
+
+🔹 Caching (Redis)  
+🔹 Notifications System  
+🔹 Advanced Filtering & Search  
+🔹 Performance Optimization  
+🔹 Microservices Architecture  
